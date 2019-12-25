@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Folder
+.idea/
+cmake-build-debug/
+cmake-build-release/
+model_128/

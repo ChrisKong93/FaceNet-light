@@ -1,2 +1,2 @@
 # FaceNet-light
-FaceNet-light c++
+FaceNet-light with c++
