@@ -45,42 +45,55 @@ void image2Matrix(const Mat &image, const struct pBox *pbox, int num) {
         return;
     }
     mydataFmt *p = pbox->pdata;
+    double sqr, stddev_adj;
+    int size;
+    mydataFmt mymean, mystddev;
+    // prewhiten
+    if (num != 0) {
+        MeanAndDev(image, mymean, mystddev);
+        cout << mymean << "----" << mystddev << endl;
+        size = image.cols * image.rows * image.channels();
+        sqr = sqrt(double(size));
+        if (mystddev >= 1.0 / sqr) {
+            stddev_adj = mystddev;
+        } else {
+            stddev_adj = 1.0 / sqr;
+        }
+    }
     for (int rowI = 0; rowI < image.rows; rowI++) {
         for (int colK = 0; colK < image.cols; colK++) {
             if (num == 0) {
-                *p = (image.at<Vec3b>(rowI, colK)[0] - 127.5) * 0.0078125;
+                *p = (image.at<Vec3b>(rowI, colK)[2] - 127.5) * 0.0078125;
                 *(p + image.rows * image.cols) = (image.at<Vec3b>(rowI, colK)[1] - 127.5) * 0.0078125;
-                *(p + 2 * image.rows * image.cols) = (image.at<Vec3b>(rowI, colK)[2] - 127.5) * 0.0078125;
+                *(p + 2 * image.rows * image.cols) = (image.at<Vec3b>(rowI, colK)[0] - 127.5) * 0.0078125;
                 p++;
             } else {
-                double mean, stddev, sqr, stddev_adj;
-                int size;
-                Mat temp_m, temp_sd;
-                meanStdDev(image, temp_m, temp_sd);
-                mean = temp_m.at<double>(0, 0);
-                stddev = temp_sd.at<double>(0, 0);
-                size = image.cols * image.rows * image.channels();
-                sqr = sqrt(double(size));
-
-                if (stddev >= 1.0 / sqr) {
-                    stddev_adj = stddev;
-                } else {
-                    stddev_adj = 1.0 / sqr;
-                }
-//                cout << mean << "|" << stddev << "|" << size << "|" << stddev_adj << "|" << endl;
-                for (int i = 0; i < image.rows; i++) {
-                    for (int j = 0; j < image.cols; j++) {
-                        image.at<uchar>(i, j);
-                        *p = (image.at<Vec3b>(i, j)[0] - mean) / stddev_adj;
-                        *(p + image.rows * image.cols) = (image.at<Vec3b>(i, j)[1] - mean) / stddev_adj;
-                        *(p + 2 * image.rows * image.cols) = (image.at<Vec3b>(i, j)[2] - mean) / stddev_adj;
-//                        cout << (image.at<Vec3b>(i, j)[0] - mean) / stddev_adj << endl;
-//                        return;
-                    }
-                }
+                // brg2rgb
+                *(p + 0 * image.rows * image.cols) = (image.at<Vec3b>(rowI, colK)[2] - mymean) / stddev_adj;
+                *(p + 1 * image.rows * image.cols) = (image.at<Vec3b>(rowI, colK)[1] - mymean) / stddev_adj;
+                *(p + 2 * image.rows * image.cols) = (image.at<Vec3b>(rowI, colK)[0] - mymean) / stddev_adj;
+                p++;
             }
         }
     }
+}
+
+void MeanAndDev(const Mat &image, mydataFmt &p, mydataFmt &q) {
+    mydataFmt meansum = 0, stdsum = 0;
+    for (int rowI = 0; rowI < image.rows; rowI++) {
+        for (int colK = 0; colK < image.cols; colK++) {
+            meansum += image.at<Vec3b>(rowI, colK)[0] + image.at<Vec3b>(rowI, colK)[1] + image.at<Vec3b>(rowI, colK)[2];
+        }
+    }
+    p = meansum / (image.cols * image.rows * image.channels());
+    for (int rowI = 0; rowI < image.rows; rowI++) {
+        for (int colK = 0; colK < image.cols; colK++) {
+            stdsum += pow((image.at<Vec3b>(rowI, colK)[0] - p), 2) +
+                      pow((image.at<Vec3b>(rowI, colK)[1] - p), 2) +
+                      pow((image.at<Vec3b>(rowI, colK)[2] - p), 2);
+        }
+    }
+    q = sqrt(stdsum / (image.cols * image.rows * image.channels()));
 }
 
 void featurePadInit(const pBox *pbox, pBox *outpBox, const int pad, const int padw, const int padh) {
@@ -156,12 +169,6 @@ void convolutionInit(const Weight *weight, pBox *pbox, pBox *outpBox) {
 }
 
 void convolution(const Weight *weight, const pBox *pbox, pBox *outpBox) {
-//    if (weight->pad != 0) {
-//        pBox *padpbox = new pBox;
-//        featurePadInit(outpBox, padpbox, weight->pad, weight->padw, weight->padh);
-//        featurePad(outpBox, padpbox, weight->pad, weight->padw, weight->padh);
-//        *outpBox = *padpbox;
-//    }
     int ckh, ckw, ckd, stride, cknum, ckpad, imginputh, imginputw, imginputd, Nh, Nw;
     mydataFmt *ck, *imginput;
 //    float *output = outpBox->pdata;
@@ -206,7 +213,6 @@ void convolution(const Weight *weight, const pBox *pbox, pBox *outpBox) {
             }
         }
     }
-//    cout << "output->pdata:" << (outpBox->pdata[10]) << endl;
 }
 
 void maxPoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride, int flag) {
@@ -315,8 +321,12 @@ void avePooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) {
     }
 }
 
-
-void prelu(struct pBox *pbox, mydataFmt *pbias, mydataFmt *prelu_gmma) {
+/**
+ * 激活函数 没有系数
+ * @param pbox
+ * @param pbias
+ */
+void relu(struct pBox *pbox, mydataFmt *pbias) {
     if (pbox->pdata == NULL) {
         cout << "the  Relu feature is NULL!!" << endl;
         return;
@@ -327,17 +337,15 @@ void prelu(struct pBox *pbox, mydataFmt *pbias, mydataFmt *prelu_gmma) {
     }
     mydataFmt *op = pbox->pdata;
     mydataFmt *pb = pbias;
-    mydataFmt *pg = prelu_gmma;
 
     long dis = pbox->width * pbox->height;
     for (int channel = 0; channel < pbox->channel; channel++) {
         for (int col = 0; col < dis; col++) {
             *op = *op + *pb;
-            *op = (*op > 0) ? (*op) : ((*op) * (*pg));
+            *op = (*op > 0) ? (*op) : ((*op) * 0);
             op++;
         }
         pb++;
-        pg++;
     }
 }
 
@@ -364,36 +372,30 @@ void fullconnect(const Weight *weight, const pBox *pbox, pBox *outpBox) {
     //               row         no trans         A's row               A'col
     //cblas_sgemv(CblasRowMajor, CblasNoTrans, weight->selfChannel, weight->lastChannel, 1, weight->pdata, weight->lastChannel, pbox->pdata, 1, 0, outpBox->pdata, 1);
     vectorXmatrix(pbox->pdata, weight->pdata,
-                  pbox->width * pbox->height * pbox->channel,
                   weight->lastChannel, weight->selfChannel,
                   outpBox->pdata);
 }
 
-void vectorXmatrix(mydataFmt *matrix, mydataFmt *v, int size, int v_w, int v_h, mydataFmt *p) {
+void vectorXmatrix(mydataFmt *matrix, mydataFmt *v, int v_w, int v_h, mydataFmt *p) {
     for (int i = 0; i < v_h; i++) {
         p[i] = 0;
         for (int j = 0; j < v_w; j++) {
             p[i] += matrix[j] * v[i * v_w + j];
-//            cout << p[i] << endl;
         }
-//        cout << p[i] << endl;
-//        p[i] = -0.0735729;
-//        cout << "...." << endl;
-//        break;
     }
-//    cout << "...." << endl;
 }
 
 void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length) {
     ifstream in(filename.data());
     string line;
+    long temp = dataNumber[0];
     if (in) {
         int i = 0;
         int count = 0;
         int pos = 0;
         while (getline(in, line)) {
             try {
-                if (i < dataNumber[count]) {
+                if (i < temp) {
                     line.erase(0, 1);
                     pos = line.find(']');
                     line.erase(pos, 1);
@@ -401,12 +403,14 @@ void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length
                     if (pos != -1) {
                         line.erase(pos, 1);
                     }
-                    *(pTeam[count])++ = atof(line.data());
+                    if (dataNumber[count] != 0) {
+                        *(pTeam[count])++ = atof(line.data());
+                    }
                 } else {
                     count++;
                     if ((length != 0) && (count == length))
                         break;
-                    dataNumber[count] += dataNumber[count - 1];
+                    temp += dataNumber[count];
                     line.erase(0, 1);
                     pos = line.find(']');
                     line.erase(pos, 1);
@@ -414,7 +418,9 @@ void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length
                     if (pos != -1) {
                         line.erase(pos, 1);
                     }
-                    *(pTeam[count])++ = atof(line.data());
+                    if (dataNumber[count] != 0) {
+                        *(pTeam[count])++ = atof(line.data());
+                    }
                 }
                 i++;
             }
@@ -429,19 +435,15 @@ void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length
 }
 
 //									w			  sc			 lc			ks				s		p    kw       kh
-long initConvAndFc(struct Weight *weight, int schannel, int lchannel, int kersize,
+long ConvAndFcInit(struct Weight *weight, int schannel, int lchannel, int kersize,
                    int stride, int pad, int w, int h, int padw, int padh) {
     weight->selfChannel = schannel;
     weight->lastChannel = lchannel;
     weight->kernelSize = kersize;
-//    if (kersize == 0) {
     weight->h = h;
     weight->w = w;
-//    }
-//    if (pad == -1) {
     weight->padh = padh;
     weight->padw = padw;
-//    }
     weight->stride = stride;
     weight->pad = pad;
     weight->pbias = (mydataFmt *) malloc(schannel * sizeof(mydataFmt));
@@ -459,9 +461,114 @@ long initConvAndFc(struct Weight *weight, int schannel, int lchannel, int kersiz
     return byteLenght;
 }
 
-void initpRelu(struct pRelu *prelu, int width) {
-    prelu->width = width;
-    prelu->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
-    if (prelu->pdata == NULL)cout << "prelu apply for memory failed!!!!";
-    memset(prelu->pdata, 0, width * sizeof(mydataFmt));
+void conv_mergeInit(pBox *output, pBox *c1, pBox *c2, pBox *c3, pBox *c4) {
+    output->channel = 0;
+    output->height = c1->height;
+    output->width = c1->width;
+    if (c1 != 0) {
+        output->channel = c1->channel;
+        if (c2 != 0) {
+            output->channel += c2->channel;
+            if (c3 != 0) {
+                output->channel += c3->channel;
+                if (c4 != 0) {
+                    output->channel += c4->channel;
+                }
+            }
+        }
+    }
+    output->pdata = (mydataFmt *) malloc(output->width * output->height * output->channel * sizeof(mydataFmt));
+    if (output->pdata == NULL)cout << "the conv_mergeInit is failed!!" << endl;
+    memset(output->pdata, 0, output->width * output->height * output->channel * sizeof(mydataFmt));
+}
+
+void conv_merge(pBox *output, pBox *c1, pBox *c2, pBox *c3, pBox *c4) {
+//    cout << "output->channel:" << output->channel << endl;
+    if (c1 != 0) {
+        long count1 = c1->height * c1->width * c1->channel;
+        //output->pdata = c1->pdata;
+        for (long i = 0; i < count1; i++) {
+            output->pdata[i] = c1->pdata[i];
+        }
+        if (c2 != 0) {
+            long count2 = c2->height * c2->width * c2->channel;
+            for (long i = 0; i < count2; i++) {
+                output->pdata[count1 + i] = c2->pdata[i];
+            }
+            if (c3 != 0) {
+                long count3 = c3->height * c3->width * c3->channel;
+                for (long i = 0; i < count3; i++) {
+                    output->pdata[count1 + count2 + i] = c3->pdata[i];
+                }
+                if (c4 != 0) {
+                    long count4 = c4->height * c4->width * c4->channel;
+                    for (long i = 0; i < count4; i++) {
+                        output->pdata[count1 + count2 + count3 + i] = c4->pdata[i];
+                    }
+                }
+            }
+        }
+    } else { cout << "conv_mergeInit" << endl; }
+}
+
+void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale) {
+    outpBox->channel = temppbox->channel;
+    outpBox->width = temppbox->width;
+    outpBox->height = temppbox->height;
+    outpBox->pdata = (mydataFmt *) malloc(outpBox->width * outpBox->height * outpBox->channel * sizeof(mydataFmt));
+    if (outpBox->pdata == NULL)cout << "the mulandaddInit is failed!!" << endl;
+    memset(outpBox->pdata, 0, outpBox->width * outpBox->height * outpBox->channel * sizeof(mydataFmt));
+}
+
+void mulandadd(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale) {
+    mydataFmt *ip = inpbox->pdata;
+    mydataFmt *tp = temppbox->pdata;
+    mydataFmt *op = outpBox->pdata;
+    long dis = inpbox->width * inpbox->height * inpbox->channel;
+    for (long i = 0; i < dis; i++) {
+        op[i] = ip[i] + tp[i] * scale;
+    }
+}
+
+void BatchNormInit(struct BN *var, struct BN *mean, struct BN *beta, int width) {
+    var->width = width;
+    var->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
+    if (var->pdata == NULL)cout << "prelu apply for memory failed!!!!";
+    memset(var->pdata, 0, width * sizeof(mydataFmt));
+
+    mean->width = width;
+    mean->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
+    if (mean->pdata == NULL)cout << "prelu apply for memory failed!!!!";
+    memset(mean->pdata, 0, width * sizeof(mydataFmt));
+
+    beta->width = width;
+    beta->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
+    if (beta->pdata == NULL)cout << "prelu apply for memory failed!!!!";
+    memset(beta->pdata, 0, width * sizeof(mydataFmt));
+}
+
+void BatchNorm(struct pBox *pbox, struct BN *var, struct BN *mean, struct BN *beta) {
+    if (pbox->pdata == NULL) {
+        cout << "Relu feature is NULL!!" << endl;
+        return;
+    }
+    if ((var->pdata == NULL) || (mean->pdata == NULL) || (beta->pdata == NULL)) {
+        cout << "the  BatchNorm bias is NULL!!" << endl;
+        return;
+    }
+    mydataFmt *pp = pbox->pdata;
+    mydataFmt *vp = var->pdata;
+    mydataFmt *mp = mean->pdata;
+    mydataFmt *bp = beta->pdata;
+    int gamma = 1;
+    float epsilon = 0.001;
+    long dis = pbox->width * pbox->height;
+    mydataFmt temp = 0;
+    for (int channel = 0; channel < pbox->channel; channel++) {
+        temp = gamma / sqrt(((vp[channel]) + epsilon));
+        for (int col = 0; col < dis; col++) {
+            *pp = temp * (*pp) + ((bp[channel]) - temp * (mp[channel]));
+            pp++;
+        }
+    }
 }

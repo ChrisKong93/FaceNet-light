@@ -11,7 +11,6 @@
 #include <string>
 #include <math.h>
 #include "pBox.h"
-//#include <cblas.h>
 
 using namespace cv;
 
@@ -25,16 +24,14 @@ void avePooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride);
 
 void featurePad(const pBox *pbox, pBox *outpBox, const int pad, const int padw = 0, const int padh = 0);
 
-void prelu(struct pBox *pbox, mydataFmt *pbias, mydataFmt *prelu_gmma);
+void relu(struct pBox *pbox, mydataFmt *pbias);
 
 void fullconnect(const Weight *weight, const pBox *pbox, pBox *outpBox);
 
 void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length = 0);
 
-long initConvAndFc(struct Weight *weight, int schannel, int lchannel, int kersize, int stride, int pad,
+long ConvAndFcInit(struct Weight *weight, int schannel, int lchannel, int kersize, int stride, int pad,
                    int w = 0, int h = 0, int padw = 0, int padh = 0);
-
-void initpRelu(struct pRelu *prelu, int width);
 
 void image2MatrixInit(Mat &image, struct pBox *pbox);
 
@@ -48,8 +45,21 @@ void convolutionInit(const Weight *weight, pBox *pbox, pBox *outpBox);
 
 void fullconnectInit(const Weight *weight, pBox *outpBox);
 
-void vectorXmatrix(mydataFmt *matrix, mydataFmt *v, int size, int v_w, int v_h, mydataFmt *p);
+void vectorXmatrix(mydataFmt *matrix, mydataFmt *v, int v_w, int v_h, mydataFmt *p);
 
 void convolution(const Weight *weight, const pBox *pbox, pBox *outpBox);
 
+void MeanAndDev(const Mat &image, mydataFmt &p, mydataFmt &q);
+
+void conv_merge(pBox *output, pBox *c1 = 0, pBox *c2 = 0, pBox *c3 = 0, pBox *c4 = 0);
+
+void conv_mergeInit(pBox *output, pBox *c1 = 0, pBox *c2 = 0, pBox *c3 = 0, pBox *c4 = 0);
+
+void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale);
+
+void mulandadd(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale = 1);
+
+void BatchNormInit(struct BN *var, struct BN *mean, struct BN *beta, int width);
+
+void BatchNorm(struct pBox *pbox, struct BN *var, struct BN *mean, struct BN *beta);
 #endif

@@ -23,3 +23,11 @@ void freeWeight(struct Weight *weight) {
     weight->pdata = NULL;
     delete weight;
 }
+
+void freeBN(struct BN *bn) {
+    if (bn->pdata == NULL)cout << "weight is NULL!" << endl;
+    else
+        free(bn->pdata);
+    bn->pdata = NULL;
+    delete bn;
+}
