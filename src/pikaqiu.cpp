@@ -10,7 +10,7 @@ int main() {
     facenet ggg;
     vector<mydataFmt> o;
     ggg.run(Image, o, 0);
-//        imshow("result", Image);
+    imshow("result", Image);
     imwrite("../result.jpg", Image);
 
     for (int i = 0; i < Num; ++i) {

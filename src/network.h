@@ -55,7 +55,7 @@ void conv_merge(pBox *output, pBox *c1 = 0, pBox *c2 = 0, pBox *c3 = 0, pBox *c4
 
 void conv_mergeInit(pBox *output, pBox *c1 = 0, pBox *c2 = 0, pBox *c3 = 0, pBox *c4 = 0);
 
-void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale);
+void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox);
 
 void mulandadd(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale = 1);
 
