@@ -1,5 +1,10 @@
 #include "network.h"
 
+/**
+ * 卷积以后偏移
+ * @param pbox　feature map
+ * @param pbias　偏移量
+ */
 void addbias(struct pBox *pbox, mydataFmt *pbias) {
     if (pbox->pdata == NULL) {
         cout << "Relu feature is NULL!!" << endl;
@@ -22,6 +27,11 @@ void addbias(struct pBox *pbox, mydataFmt *pbias) {
     }
 }
 
+/**
+ * mat图片转成pbox结构体初始化
+ * @param image　mat格式的图片
+ * @param pbox　结构体pbox
+ */
 void image2MatrixInit(Mat &image, struct pBox *pbox) {
     if ((image.data == NULL) || (image.type() != CV_8UC3)) {
         cout << "image's type is wrong!!Please set CV_8UC3" << endl;
@@ -36,6 +46,12 @@ void image2MatrixInit(Mat &image, struct pBox *pbox) {
     memset(pbox->pdata, 0, pbox->channel * pbox->height * pbox->width * sizeof(mydataFmt));
 }
 
+/**
+ * mat图片转成pbox结构体
+ * @param image　mat格式的图片
+ * @param pbox　结构体pbox
+ * @param num　选择mtcnn还是facenet 0-mtcnn  非0-facenet  缺省为０
+ */
 void image2Matrix(const Mat &image, const struct pBox *pbox, int num) {
     if ((image.data == NULL) || (image.type() != CV_8UC3)) {
         cout << "image's type is wrong!!Please set CV_8UC3" << endl;
@@ -78,6 +94,12 @@ void image2Matrix(const Mat &image, const struct pBox *pbox, int num) {
     }
 }
 
+/**
+ * 求图片像素的平均值和标准差
+ * @param image 图片
+ * @param p 平均值
+ * @param q 标准差
+ */
 void MeanAndDev(const Mat &image, mydataFmt &p, mydataFmt &q) {
     mydataFmt meansum = 0, stdsum = 0;
     for (int rowI = 0; rowI < image.rows; rowI++) {
@@ -96,6 +118,14 @@ void MeanAndDev(const Mat &image, mydataFmt &p, mydataFmt &q) {
     q = sqrt(stdsum / (image.cols * image.rows * image.channels()));
 }
 
+/**
+ * 卷积补偿初始化
+ * @param pbox　输入feature map
+ * @param outpBox　输出feature map
+ * @param pad　补偿 正方形算子(-1为不规则补偿，0为不需要补偿)
+ * @param padw 补偿　不规则算子的宽度
+ * @param padh　补偿　不规则算子的高度
+ */
 void featurePadInit(const pBox *pbox, pBox *outpBox, const int pad, const int padw, const int padh) {
     if (pad < -1) {
         cout << "the data needn't to pad,please check you network!" << endl;
@@ -115,6 +145,14 @@ void featurePadInit(const pBox *pbox, pBox *outpBox, const int pad, const int pa
     memset(outpBox->pdata, 0, outpBox->channel * outpBox->height * RowByteNum);
 }
 
+/**
+ * 卷积补偿
+ * @param pbox　输入feature map
+ * @param outpBox 输出feature map
+ * @param pad　补偿 正方形算子(-1为不规则补偿，0为不需要补偿)
+ * @param padw 补偿　不规则算子的宽度
+ * @param padh　补偿　不规则算子的高度
+ */
 void featurePad(const pBox *pbox, pBox *outpBox, const int pad, const int padw, const int padh) {
     mydataFmt *p = outpBox->pdata;
     mydataFmt *pIn = pbox->pdata;
@@ -143,6 +181,12 @@ void featurePad(const pBox *pbox, pBox *outpBox, const int pad, const int padw, 
     }
 }
 
+/**
+ * 卷积初始化
+ * @param weight 卷积权重
+ * @param pbox　输入feature map
+ * @param outpBox 输出feature map
+ */
 void convolutionInit(const Weight *weight, pBox *pbox, pBox *outpBox) {
     outpBox->channel = weight->selfChannel;
 //    ((imginputh - ckh + 2 * ckpad) / stride) + 1;
@@ -168,6 +212,12 @@ void convolutionInit(const Weight *weight, pBox *pbox, pBox *outpBox) {
     }
 }
 
+/**
+ * 卷积
+ * @param weight 卷积权重
+ * @param pbox　输入feature map
+ * @param outpBox 输出feature map
+ */
 void convolution(const Weight *weight, const pBox *pbox, pBox *outpBox) {
     int ckh, ckw, ckd, stride, cknum, ckpad, imginputh, imginputw, imginputd, Nh, Nw;
     mydataFmt *ck, *imginput;
@@ -215,6 +265,14 @@ void convolution(const Weight *weight, const pBox *pbox, pBox *outpBox) {
     }
 }
 
+/**
+ * 最大值池化初始化
+ * @param pbox 输入feature map
+ * @param Matrix 输出feature map
+ * @param kernelSize 池化算子大小
+ * @param stride　步长
+ * @param flag　标志位
+ */
 void maxPoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride, int flag) {
     if (flag == 1) {
         Matrix->width = floor((float) (pbox->width - kernelSize) / stride + 1);
@@ -229,6 +287,13 @@ void maxPoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride, 
     memset(Matrix->pdata, 0, Matrix->channel * Matrix->width * Matrix->height * sizeof(mydataFmt));
 }
 
+/**
+ * 最大值池化
+ * @param pbox 输入feature map
+ * @param Matrix 输出feature map
+ * @param kernelSize 池化算子大小
+ * @param stride　步长
+ */
 void maxPooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) {
     if (pbox->pdata == NULL) {
         cout << "the feature2Matrix pbox is NULL!!" << endl;
@@ -281,6 +346,13 @@ void maxPooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) {
     }
 }
 
+/**
+ * 平均值池化初始化
+ * @param pbox 输入feature map
+ * @param Matrix 输出feature map
+ * @param kernelSize 池化算子大小
+ * @param stride　步长
+ */
 void avePoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) {
     Matrix->width = ceil((float) (pbox->width - kernelSize) / stride + 1);
     Matrix->height = ceil((float) (pbox->height - kernelSize) / stride + 1);
@@ -290,6 +362,13 @@ void avePoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) 
     memset(Matrix->pdata, 0, Matrix->channel * Matrix->width * Matrix->height * sizeof(mydataFmt));
 }
 
+/**
+ * 平均值池化
+ * @param pbox 输入feature map
+ * @param Matrix 输出feature map
+ * @param kernelSize 池化算子大小
+ * @param stride　步长
+ */
 void avePooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) {
     if (pbox->pdata == NULL) {
         cout << "the feature2Matrix pbox is NULL!!" << endl;
@@ -322,9 +401,52 @@ void avePooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) {
 }
 
 /**
+ * 激活函数 有系数 初始化
+ * @param prelu　激活函数权重
+ * @param width　长度
+ */
+void pReluInit(struct pRelu *prelu, int width) {
+    prelu->width = width;
+    prelu->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
+    if (prelu->pdata == NULL)cout << "prelu apply for memory failed!!!!";
+    memset(prelu->pdata, 0, width * sizeof(mydataFmt));
+}
+
+/**
+ * 激活函数 有系数
+ * @param pbox　输入feature
+ * @param pbias 偏移
+ * @param prelu_gmma　激活函数权重
+ */
+void prelu(struct pBox *pbox, mydataFmt *pbias, mydataFmt *prelu_gmma) {
+    if (pbox->pdata == NULL) {
+        cout << "the  pRelu feature is NULL!!" << endl;
+        return;
+    }
+    if (pbias == NULL) {
+        cout << "the  pRelu bias is NULL!!" << endl;
+        return;
+    }
+    mydataFmt *op = pbox->pdata;
+    mydataFmt *pb = pbias;
+    mydataFmt *pg = prelu_gmma;
+
+    long dis = pbox->width * pbox->height;
+    for (int channel = 0; channel < pbox->channel; channel++) {
+        for (int col = 0; col < dis; col++) {
+            *op = *op + *pb;
+            *op = (*op > 0) ? (*op) : ((*op) * (*pg));
+            op++;
+        }
+        pb++;
+        pg++;
+    }
+}
+
+/**
  * 激活函数 没有系数
- * @param pbox
- * @param pbias
+ * @param pbox　输入feature
+ * @param pbias 偏移
  */
 void relu(struct pBox *pbox, mydataFmt *pbias) {
     if (pbox->pdata == NULL) {
@@ -349,6 +471,11 @@ void relu(struct pBox *pbox, mydataFmt *pbias) {
     }
 }
 
+/**
+ * 全连接初始化
+ * @param weight　权重参数
+ * @param outpBox　输出feature map
+ */
 void fullconnectInit(const Weight *weight, pBox *outpBox) {
     outpBox->channel = weight->selfChannel;
     outpBox->width = 1;
@@ -358,6 +485,12 @@ void fullconnectInit(const Weight *weight, pBox *outpBox) {
     memset(outpBox->pdata, 0, weight->selfChannel * sizeof(mydataFmt));
 }
 
+/**
+ * 全连接
+ * @param weight　权重参数
+ * @param pbox 　输入feature map
+ * @param outpBox　输出feature map
+ */
 void fullconnect(const Weight *weight, const pBox *pbox, pBox *outpBox) {
     if (pbox->pdata == NULL) {
         cout << "the fc feature is NULL!!" << endl;
@@ -376,6 +509,14 @@ void fullconnect(const Weight *weight, const pBox *pbox, pBox *outpBox) {
                   outpBox->pdata);
 }
 
+/**
+ * 一维数组与二位矩阵相乘
+ * @param matrix　输入feature map
+ * @param v 权重
+ * @param v_w　权重矩阵的宽度
+ * @param v_h　权重矩阵的高度
+ * @param p　输出feature map
+ */
 void vectorXmatrix(mydataFmt *matrix, mydataFmt *v, int v_w, int v_h, mydataFmt *p) {
     for (int i = 0; i < v_h; i++) {
         p[i] = 0;
@@ -385,6 +526,13 @@ void vectorXmatrix(mydataFmt *matrix, mydataFmt *v, int v_w, int v_h, mydataFmt 
     }
 }
 
+/**
+ * 读取模型文件
+ * @param filename　文件路径
+ * @param dataNumber　参数个数数组
+ * @param pTeam　变量数组
+ * @param length
+ */
 void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length) {
     ifstream in(filename.data());
     string line;
@@ -434,6 +582,20 @@ void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length
     }
 }
 
+/**
+ * 卷积和全连接初始化
+ * @param weight　权重
+ * @param schannel　卷积核个数
+ * @param lchannel　上一层feature map个数
+ * @param kersize　卷积核大小
+ * @param stride　卷积步长
+ * @param pad　卷积是否补偿
+ * @param w　卷积核宽度
+ * @param h　卷积核高度
+ * @param padw　补偿宽度
+ * @param padh　补偿高度
+ * @return　参数长度
+ */
 //									w			  sc			 lc			ks				s		p    kw       kh
 long ConvAndFcInit(struct Weight *weight, int schannel, int lchannel, int kersize,
                    int stride, int pad, int w, int h, int padw, int padh) {
@@ -461,6 +623,159 @@ long ConvAndFcInit(struct Weight *weight, int schannel, int lchannel, int kersiz
     return byteLenght;
 }
 
+/**
+ * softmax
+ * @param pbox  feature map
+ */
+void softmax(const struct pBox *pbox) {
+    if (pbox->pdata == NULL) {
+        cout << "the softmax's pdata is NULL , Please check !" << endl;
+        return;
+    }
+    mydataFmt *p2D = pbox->pdata;
+    mydataFmt *p3D = NULL;
+    long mapSize = pbox->width * pbox->height;
+    mydataFmt eleSum = 0;
+    for (int row = 0; row < pbox->height; row++) {
+        for (int col = 0; col < pbox->width; col++) {
+            eleSum = 0;
+            for (int channel = 0; channel < pbox->channel; channel++) {
+                p3D = p2D + channel * mapSize;
+                *p3D = exp(*p3D);
+                eleSum += *p3D;
+            }
+            for (int channel = 0; channel < pbox->channel; channel++) {
+                p3D = p2D + channel * mapSize;
+                *p3D = (*p3D) / eleSum;
+            }
+            p2D++;
+        }
+    }
+}
+
+bool cmpScore(struct orderScore lsh, struct orderScore rsh) {
+    if (lsh.score < rsh.score)
+        return true;
+    else
+        return false;
+}
+
+/**
+ * 非极大值抑制
+ * @param boundingBox_
+ * @param bboxScore_
+ * @param overlap_threshold
+ * @param modelname
+ */
+void nms(vector<struct Bbox> &boundingBox_, vector<struct orderScore> &bboxScore_, const mydataFmt overlap_threshold,
+         string modelname) {
+    if (boundingBox_.empty()) {
+        return;
+    }
+    std::vector<int> heros;
+    //sort the score
+    sort(bboxScore_.begin(), bboxScore_.end(), cmpScore);
+
+    int order = 0;
+    float IOU = 0;
+    float maxX = 0;
+    float maxY = 0;
+    float minX = 0;
+    float minY = 0;
+    while (bboxScore_.size() > 0) {
+        order = bboxScore_.back().oriOrder;
+        bboxScore_.pop_back();
+        if (order < 0)continue;
+        heros.push_back(order);
+        boundingBox_.at(order).exist = false;//delete it
+
+        for (int num = 0; num < boundingBox_.size(); num++) {
+            if (boundingBox_.at(num).exist) {
+                //the iou
+                maxX = (boundingBox_.at(num).x1 > boundingBox_.at(order).x1) ? boundingBox_.at(num).x1
+                                                                             : boundingBox_.at(order).x1;
+                maxY = (boundingBox_.at(num).y1 > boundingBox_.at(order).y1) ? boundingBox_.at(num).y1
+                                                                             : boundingBox_.at(order).y1;
+                minX = (boundingBox_.at(num).x2 < boundingBox_.at(order).x2) ? boundingBox_.at(num).x2
+                                                                             : boundingBox_.at(order).x2;
+                minY = (boundingBox_.at(num).y2 < boundingBox_.at(order).y2) ? boundingBox_.at(num).y2
+                                                                             : boundingBox_.at(order).y2;
+                //maxX1 and maxY1 reuse
+                maxX = ((minX - maxX + 1) > 0) ? (minX - maxX + 1) : 0;
+                maxY = ((minY - maxY + 1) > 0) ? (minY - maxY + 1) : 0;
+                //IOU reuse for the area of two bbox
+                IOU = maxX * maxY;
+                if (!modelname.compare("Union"))
+                    IOU = IOU / (boundingBox_.at(num).area + boundingBox_.at(order).area - IOU);
+                else if (!modelname.compare("Min")) {
+                    IOU = IOU /
+                          ((boundingBox_.at(num).area < boundingBox_.at(order).area) ? boundingBox_.at(num).area
+                                                                                     : boundingBox_.at(
+                                          order).area);
+                }
+                if (IOU > overlap_threshold) {
+                    boundingBox_.at(num).exist = false;
+                    for (vector<orderScore>::iterator it = bboxScore_.begin(); it != bboxScore_.end(); it++) {
+                        if ((*it).oriOrder == num) {
+                            (*it).oriOrder = -1;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for (int i = 0; i < heros.size(); i++)
+        boundingBox_.at(heros.at(i)).exist = true;
+}
+
+void refineAndSquareBbox(vector<struct Bbox> &vecBbox, const int &height, const int &width) {
+    if (vecBbox.empty()) {
+        cout << "Bbox is empty!!" << endl;
+        return;
+    }
+    float bbw = 0, bbh = 0, maxSide = 0;
+    float h = 0, w = 0;
+    float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+    for (vector<struct Bbox>::iterator it = vecBbox.begin(); it != vecBbox.end(); it++) {
+        if ((*it).exist) {
+            bbh = (*it).x2 - (*it).x1 + 1;
+            bbw = (*it).y2 - (*it).y1 + 1;
+            x1 = (*it).x1 + (*it).regreCoord[1] * bbh;
+            y1 = (*it).y1 + (*it).regreCoord[0] * bbw;
+            x2 = (*it).x2 + (*it).regreCoord[3] * bbh;
+            y2 = (*it).y2 + (*it).regreCoord[2] * bbw;
+
+            h = x2 - x1 + 1;
+            w = y2 - y1 + 1;
+
+            maxSide = (h > w) ? h : w;
+            x1 = x1 + h * 0.5 - maxSide * 0.5;
+            y1 = y1 + w * 0.5 - maxSide * 0.5;
+            (*it).x2 = round(x1 + maxSide - 1);
+            (*it).y2 = round(y1 + maxSide - 1);
+            (*it).x1 = round(x1);
+            (*it).y1 = round(y1);
+
+            //boundary check
+            if ((*it).x1 < 0)(*it).x1 = 0;
+            if ((*it).y1 < 0)(*it).y1 = 0;
+            if ((*it).x2 > height)(*it).x2 = height - 1;
+            if ((*it).y2 > width)(*it).y2 = width - 1;
+
+            it->area = (it->x2 - it->x1) * (it->y2 - it->y1);
+        }
+    }
+}
+
+/**
+ * 残差融合初始化
+ * @param output 输出feature map
+ * @param c1 输入feature map
+ * @param c2 输入feature map
+ * @param c3 输入feature map
+ * @param c4 输入feature map
+ */
 void conv_mergeInit(pBox *output, pBox *c1, pBox *c2, pBox *c3, pBox *c4) {
     output->channel = 0;
     output->height = c1->height;
@@ -482,6 +797,14 @@ void conv_mergeInit(pBox *output, pBox *c1, pBox *c2, pBox *c3, pBox *c4) {
     memset(output->pdata, 0, output->width * output->height * output->channel * sizeof(mydataFmt));
 }
 
+/**
+ * 残差网络融合
+ * @param output 输出feature map
+ * @param c1 输入feature map
+ * @param c2 输入feature map
+ * @param c3 输入feature map
+ * @param c4 输入feature map
+ */
 void conv_merge(pBox *output, pBox *c1, pBox *c2, pBox *c3, pBox *c4) {
 //    cout << "output->channel:" << output->channel << endl;
     if (c1 != 0) {
@@ -511,7 +834,16 @@ void conv_merge(pBox *output, pBox *c1, pBox *c2, pBox *c3, pBox *c4) {
     } else { cout << "conv_mergeInit" << endl; }
 }
 
-void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale) {
+/**
+ * 残差网络做多次按比例相加初始化
+ * @param inpbox 输入feature map
+ * @param temppbox 输入feature map
+ * @param outpBox 输出feature map
+ */
+void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox) {
+    if (!((inpbox->width == temppbox->width) && (inpbox->height == temppbox->height) &&
+          (inpbox->channel == temppbox->channel)))
+        cout << "the mulandaddInit is failed!!" << endl;
     outpBox->channel = temppbox->channel;
     outpBox->width = temppbox->width;
     outpBox->height = temppbox->height;
@@ -520,6 +852,13 @@ void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, floa
     memset(outpBox->pdata, 0, outpBox->width * outpBox->height * outpBox->channel * sizeof(mydataFmt));
 }
 
+/**
+ * 残差网络做多次按比例相加
+ * @param inpbox 输入feature map
+ * @param temppbox 输入feature map
+ * @param outpBox 输出feature map
+ * @param scale 比例系数
+ */
 void mulandadd(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float scale) {
     mydataFmt *ip = inpbox->pdata;
     mydataFmt *tp = temppbox->pdata;
@@ -530,7 +869,15 @@ void mulandadd(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float sc
     }
 }
 
-void BatchNormInit(struct BN *var, struct BN *mean, struct BN *beta, int width) {
+
+/**
+ * BN初始化
+ * @param beta beta
+ * @param mean 平均值
+ * @param var 方差
+ * @param width 参数个数
+ */
+void BatchNormInit(struct BN *beta, struct BN *mean, struct BN *var, int width) {
     var->width = width;
     var->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
     if (var->pdata == NULL)cout << "prelu apply for memory failed!!!!";
@@ -547,7 +894,14 @@ void BatchNormInit(struct BN *var, struct BN *mean, struct BN *beta, int width) 
     memset(beta->pdata, 0, width * sizeof(mydataFmt));
 }
 
-void BatchNorm(struct pBox *pbox, struct BN *var, struct BN *mean, struct BN *beta) {
+/**
+ * BN实现
+ * @param pbox　输入feature map
+ * @param beta beta
+ * @param mean 平均值
+ * @param var 方差
+ */
+void BatchNorm(struct pBox *pbox, struct BN *beta, struct BN *mean, struct BN *var) {
     if (pbox->pdata == NULL) {
         cout << "Relu feature is NULL!!" << endl;
         return;
