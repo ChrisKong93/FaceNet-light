@@ -1,5 +1,5 @@
 # FaceNet-light
-### FaceNet-light with c++
+## FaceNet-light with c++
 
 ##### 使用C++实现FaceNet，脱离TensorFlow，只是用OpenCV
 
@@ -11,6 +11,6 @@
 //#define Num 128
 ```
 
-### License
+## License
 
 ##### [GPL-2.0 License](https://github.com/ChrisKong93/FaceNet-light/blob/master/LICENSE).
