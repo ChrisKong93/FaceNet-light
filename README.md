@@ -13,4 +13,4 @@
 
 ### License
 
-##### The core and enum files are licensed under the [GPL-2.0 License](https://github.com/ChrisKong93/FaceNet-light/blob/master/LICENSE).
+##### [GPL-2.0 License](https://github.com/ChrisKong93/FaceNet-light/blob/master/LICENSE).
