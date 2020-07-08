@@ -74,7 +74,7 @@ void facenet::Stem(Mat &image, pBox *output) {
 //                            conv5_wb->pdata, conv5_var->pdata, conv5_mean->pdata, conv5_beta->pdata, \
 //                            conv6_wb->pdata, conv6_var->pdata, conv6_mean->pdata, conv6_beta->pdata};
     mydataFmt *pointTeam[24] = {
-                            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
+            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
                             conv2_wb->pdata, conv2_beta->pdata, conv2_mean->pdata, conv2_var->pdata, \
                             conv3_wb->pdata, conv3_beta->pdata, conv3_mean->pdata, conv3_var->pdata, \
                             conv4_wb->pdata, conv4_beta->pdata, conv4_mean->pdata, conv4_var->pdata, \
@@ -257,7 +257,7 @@ void facenet::Inception_resnet_A(pBox *input, pBox *output, string filepath, flo
 //                            conv7_wb->pdata, conv7_wb->pbias, \
 //                            conv8_wb->pdata, conv8_wb->pbias};
     mydataFmt *pointTeam[28] = {
-                            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
+            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
                             conv2_wb->pdata, conv2_beta->pdata, conv2_mean->pdata, conv2_var->pdata, \
                             conv3_wb->pdata, conv3_beta->pdata, conv3_mean->pdata, conv3_var->pdata, \
                             conv4_wb->pdata, conv4_beta->pdata, conv4_mean->pdata, conv4_var->pdata, \
@@ -406,7 +406,7 @@ void facenet::Reduction_A(pBox *input, pBox *output) {
 //                            conv3_wb->pdata, conv3_var->pdata, conv3_mean->pdata, conv3_beta->pdata, \
 //                            conv4_wb->pdata, conv4_var->pdata, conv4_mean->pdata, conv4_beta->pdata};
     mydataFmt *pointTeam[16] = {
-                            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
+            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
                             conv2_wb->pdata, conv2_beta->pdata, conv2_mean->pdata, conv2_var->pdata, \
                             conv3_wb->pdata, conv3_beta->pdata, conv3_mean->pdata, conv3_var->pdata, \
                             conv4_wb->pdata, conv4_beta->pdata, conv4_mean->pdata, conv4_var->pdata};
@@ -531,7 +531,7 @@ void facenet::Inception_resnet_B(pBox *input, pBox *output, string filepath, flo
 //                            conv5_wb->pdata, conv5_wb->pbias, \
 //                            conv6_wb->pdata, conv6_wb->pbias};
     mydataFmt *pointTeam[20] = {
-                            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
+            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
                             conv2_wb->pdata, conv2_beta->pdata, conv2_mean->pdata, conv2_var->pdata, \
                             conv3_wb->pdata, conv3_beta->pdata, conv3_mean->pdata, conv3_var->pdata, \
                             conv4_wb->pdata, conv4_beta->pdata, conv4_mean->pdata, conv4_var->pdata, \
@@ -682,7 +682,7 @@ void facenet::Reduction_B(pBox *input, pBox *output) {
 //                            conv6_wb->pdata, conv6_var->pdata, conv6_mean->pdata, conv6_beta->pdata, \
 //                            conv7_wb->pdata, conv7_var->pdata, conv7_mean->pdata, conv7_beta->pdata};
     mydataFmt *pointTeam[28] = {
-                            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
+            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
                             conv2_wb->pdata, conv2_beta->pdata, conv2_mean->pdata, conv2_var->pdata, \
                             conv3_wb->pdata, conv3_beta->pdata, conv3_mean->pdata, conv3_var->pdata, \
                             conv4_wb->pdata, conv4_beta->pdata, conv4_mean->pdata, conv4_var->pdata, \
@@ -848,7 +848,7 @@ void facenet::Inception_resnet_C(pBox *input, pBox *output, string filepath, flo
 //                            conv5_wb->pdata, conv5_wb->pbias, \
 //                            conv6_wb->pdata, conv6_wb->pbias};
     mydataFmt *pointTeam[20] = {
-                            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
+            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
                             conv2_wb->pdata, conv2_beta->pdata, conv2_mean->pdata, conv2_var->pdata, \
                             conv3_wb->pdata, conv3_beta->pdata, conv3_mean->pdata, conv3_var->pdata, \
                             conv4_wb->pdata, conv4_beta->pdata, conv4_mean->pdata, conv4_var->pdata, \
@@ -979,7 +979,7 @@ void facenet::Inception_resnet_C_None(pBox *input, pBox *output, string filepath
 //                            conv4_wb->pdata, conv4_var->pdata, conv4_mean->pdata, conv4_beta->pdata, \
 //                            conv5_wb->pdata, conv5_wb->pbias};
     mydataFmt *pointTeam[18] = {
-                            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
+            conv1_wb->pdata, conv1_beta->pdata, conv1_mean->pdata, conv1_var->pdata, \
                             conv2_wb->pdata, conv2_beta->pdata, conv2_mean->pdata, conv2_var->pdata, \
                             conv3_wb->pdata, conv3_beta->pdata, conv3_mean->pdata, conv3_var->pdata, \
                             conv4_wb->pdata, conv4_beta->pdata, conv4_mean->pdata, conv4_var->pdata, \
@@ -1064,20 +1064,6 @@ void facenet::AveragePooling(pBox *input, pBox *output) {
 }
 
 /**
- * flatten 多维转换到一维
- * @param input
- * @param output
- */
-void facenet::Flatten(pBox *input, pBox *output) {
-    output->width = input->channel;
-    output->height = 1;
-    output->channel = 1;
-    output->pdata = (mydataFmt *) malloc(output->channel * output->width * output->height * sizeof(mydataFmt));
-    if (output->pdata == NULL)cout << "the maxPoolingInit is failed!!" << endl;
-    memcpy(output->pdata, input->pdata, output->channel * output->width * output->height * sizeof(mydataFmt));
-}
-
-/**
  * 全连接网络
  * @param input 输入featuremap
  * @param output 输出featuremap
@@ -1118,14 +1104,6 @@ facenet::facenet() {
 
 facenet::~facenet() {
 
-}
-
-void facenet::printData(pBox *in) {
-    for (long i = 0; i < in->height * in->width * in->channel; ++i) {
-//        if (in->pdata[i] != 0)
-        printf("%f\n", in->pdata[i]);
-    }
-    cout << "printData" << endl;
 }
 
 /**

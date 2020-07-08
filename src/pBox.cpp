@@ -8,14 +8,6 @@ void freepBox(struct pBox *pbox) {
     delete pbox;
 }
 
-void freepRelu(struct pRelu *prelu) {
-    if (prelu->pdata == NULL)cout << "prelu is NULL!" << endl;
-    else
-        free(prelu->pdata);
-    prelu->pdata = NULL;
-    delete prelu;
-}
-
 void freeWeight(struct Weight *weight) {
     if (weight->pdata == NULL)cout << "weight is NULL!" << endl;
     else

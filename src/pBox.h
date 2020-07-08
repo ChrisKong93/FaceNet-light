@@ -12,7 +12,8 @@
 
 using namespace std;
 //#define mydataFmt double
-#define Num 128
+#define Num 512
+//#define Num 128
 typedef float mydataFmt;
 
 struct pBox : public cv::String {
@@ -20,11 +21,6 @@ struct pBox : public cv::String {
     int width;
     int height;
     int channel;
-};
-
-struct pRelu {
-    mydataFmt *pdata;
-    int width;
 };
 
 struct BN {
@@ -46,28 +42,9 @@ struct Weight {
     int padh;
 };
 
-struct Bbox {
-    float score;
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-    float area;
-    bool exist;
-    mydataFmt ppoint[10];
-    mydataFmt regreCoord[4];
-};
-
-struct orderScore {
-    mydataFmt score;
-    int oriOrder;
-};
-
 void freepBox(struct pBox *pbox);
 
 void freeWeight(struct Weight *weight);
-
-void freepRelu(struct pRelu *prelu);
 
 void freeBN(struct BN *bn);
 

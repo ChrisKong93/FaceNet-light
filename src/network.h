@@ -24,8 +24,6 @@ void avePooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride);
 
 void featurePad(const pBox *pbox, pBox *outpBox, const int pad, const int padw = 0, const int padh = 0);
 
-void prelu(struct pBox *pbox, mydataFmt *pbias, mydataFmt *prelu_gmma);
-
 void relu(struct pBox *pbox, mydataFmt *pbias);
 
 void fullconnect(const Weight *weight, const pBox *pbox, pBox *outpBox);
@@ -34,10 +32,6 @@ void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length
 
 long ConvAndFcInit(struct Weight *weight, int schannel, int lchannel, int kersize, int stride, int pad,
                    int w = 0, int h = 0, int padw = 0, int padh = 0);
-
-void pReluInit(struct pRelu *prelu, int width);
-
-void softmax(const struct pBox *pbox);
 
 void image2MatrixInit(Mat &image, struct pBox *pbox);
 
@@ -50,13 +44,6 @@ void avePoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride);
 void convolutionInit(const Weight *weight, pBox *pbox, pBox *outpBox);
 
 void fullconnectInit(const Weight *weight, pBox *outpBox);
-
-bool cmpScore(struct orderScore lsh, struct orderScore rsh);
-
-void nms(vector<struct Bbox> &boundingBox_, vector<struct orderScore> &bboxScore_, const mydataFmt overlap_threshold,
-         string modelname = "Union");
-
-void refineAndSquareBbox(vector<struct Bbox> &vecBbox, const int &height, const int &width);
 
 void vectorXmatrix(mydataFmt *matrix, mydataFmt *v, int v_w, int v_h, mydataFmt *p);
 

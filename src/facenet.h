@@ -34,10 +34,6 @@ private:
     void AveragePooling(pBox *input, pBox *output);
 
     void fully_connect(pBox *input, pBox *output, string filepath = "");
-
-    void Flatten(pBox *input, pBox *output);
-
-    void printData(pBox *output);
 };
 
 #endif //MAIN_FACENET_H

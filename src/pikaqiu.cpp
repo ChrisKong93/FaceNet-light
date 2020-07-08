@@ -113,7 +113,7 @@ void compareperson() {
     start = clock() - start;
     //    cout<<"time is  "<<start/10e3<<endl;
     cout << "time is " << (double) start / CLOCKS_PER_SEC * 1000 << "ms" << endl;
-    waitKey(5000);
+    waitKey(0);
     image0.release();
     image1.release();
 }

@@ -401,49 +401,6 @@ void avePooling(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) {
 }
 
 /**
- * 激活函数 有系数 初始化
- * @param prelu　激活函数权重
- * @param width　长度
- */
-void pReluInit(struct pRelu *prelu, int width) {
-    prelu->width = width;
-    prelu->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
-    if (prelu->pdata == NULL)cout << "prelu apply for memory failed!!!!";
-    memset(prelu->pdata, 0, width * sizeof(mydataFmt));
-}
-
-/**
- * 激活函数 有系数
- * @param pbox　输入feature
- * @param pbias 偏移
- * @param prelu_gmma　激活函数权重
- */
-void prelu(struct pBox *pbox, mydataFmt *pbias, mydataFmt *prelu_gmma) {
-    if (pbox->pdata == NULL) {
-        cout << "the  pRelu feature is NULL!!" << endl;
-        return;
-    }
-    if (pbias == NULL) {
-        cout << "the  pRelu bias is NULL!!" << endl;
-        return;
-    }
-    mydataFmt *op = pbox->pdata;
-    mydataFmt *pb = pbias;
-    mydataFmt *pg = prelu_gmma;
-
-    long dis = pbox->width * pbox->height;
-    for (int channel = 0; channel < pbox->channel; channel++) {
-        for (int col = 0; col < dis; col++) {
-            *op = *op + *pb;
-            *op = (*op > 0) ? (*op) : ((*op) * (*pg));
-            op++;
-        }
-        pb++;
-        pg++;
-    }
-}
-
-/**
  * 激活函数 没有系数
  * @param pbox　输入feature
  * @param pbias 偏移
