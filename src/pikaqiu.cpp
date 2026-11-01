@@ -10,8 +10,8 @@
 Mat RS(Mat &src) {
     int w = src.cols;
     int h = src.rows;
-    int wtemp, htemp;
-    Mat dst;
+    int wtemp = w, htemp = h;
+    Mat dst = src;
     cout << w << "\t" << h << endl;
     float threshold = 300.0;
     if (h > threshold) {
@@ -41,6 +41,27 @@ float compare(vector<mydataFmt> &lineArray0, vector<mydataFmt> &lineArray1) {
     }
     mydataFmt result = sqrt(sum);
     return result;
+}
+
+/**
+ * 对比两个人的emb值，计算余弦相似度
+ * 取值范围 [-1, 1]，越接近 1 越相似
+ * @param lineArray0 第一个人的emb值
+ * @param lineArray1 第二个人的emb值
+ * @return 余弦相似度
+ */
+float cosineSimilarity(vector<mydataFmt> &lineArray0, vector<mydataFmt> &lineArray1) {
+    mydataFmt dot = 0, norm0 = 0, norm1 = 0;
+    for (int i = 0; i < Num; ++i) {
+        dot += lineArray0[i] * lineArray1[i];
+        norm0 += lineArray0[i] * lineArray0[i];
+        norm1 += lineArray1[i] * lineArray1[i];
+    }
+    mydataFmt denom = sqrt(norm0) * sqrt(norm1);
+    if (denom < 1e-10) {
+        denom = 1e-10;
+    }
+    return dot / denom;
 }
 
 
@@ -98,9 +119,12 @@ void compareperson() {
 
 
     float result = compare(n0, n1);
+    float cosSim = cosineSimilarity(n0, n1);
     cout << "-------------------" << endl;
-    cout << result << endl;
-    if (result < 0.45)
+    cout << "欧氏距离: " << result << endl;
+    cout << "余弦相似度: " << cosSim << endl;
+    // 512维模型（L2归一化后）常用阈值大致在 0.8~1.2 附近，具体以你自己的正负样本对为准
+    if (result < 1.0)
         cout << "Probably the same person" << endl;
     else
         cout << "Probably not the same person" << endl;
