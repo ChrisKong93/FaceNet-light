@@ -33,6 +33,8 @@
 
 # Folder
 .idea/
+build/
+test_img/
 cmake-build-debug/
 cmake-build-release/
 model_128/
@@ -40,3 +42,6 @@ model_512/
 model_128.zip
 model_512.zip
 *.cfg
+
+# macOS
+.DS_Store
