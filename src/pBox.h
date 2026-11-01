@@ -16,7 +16,7 @@ using namespace std;
 //#define Num 128
 typedef float mydataFmt;
 
-struct pBox : public cv::String {
+struct pBox {
     mydataFmt *pdata;
     int width;
     int height;
