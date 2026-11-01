@@ -1124,50 +1124,52 @@ void facenet::run(Mat &image, vector<mydataFmt> &o, int count) {
 //        model_128/block35_1_list.txt
         string filepath = "../model_" + to_string(Num) + "/block35_" + to_string((i + 1)) + "_list.txt";
         Inception_resnet_A(input, output, filepath, 0.17);
+        freepBox(input);
         input = output;
         output = new pBox;
     }
     cout << "Inception_resnet_A Finally" << endl;
     Reduction_A(input, output);
     cout << "Reduction_A Finally" << endl;
+    freepBox(input);
     input = output;
     output = new pBox;
     for (int j = 0; j < 10; ++j) {
 //        model_128/block17_1_list.txt
         string filepath = "../model_" + to_string(Num) + "/block17_" + to_string((j + 1)) + "_list.txt";
         Inception_resnet_B(input, output, filepath, 0.1);
+        freepBox(input);
         input = output;
         output = new pBox;
     }
     cout << "Inception_resnet_B Finally" << endl;
     Reduction_B(input, output);
     cout << "Reduciotn_B Finally" << endl;
+    freepBox(input);
     input = output;
-//    freepBox(output);
     output = new pBox;
     for (int k = 0; k < 5; ++k) {
 //        model_128/block8_1_list.txt
         string filepath = "../model_" + to_string(Num) + "/block8_" + to_string((k + 1)) + "_list.txt";
         Inception_resnet_C(input, output, filepath, 0.2);
+        freepBox(input);
         input = output;
         output = new pBox;
     }
     cout << "Inception_resnet_C Finally" << endl;
     Inception_resnet_C_None(input, output, "../model_" + to_string(Num) + "/Block8_list.txt");
     cout << "Inception_resnet_C_None Finally" << endl;
+    freepBox(input);
     input = output;
-//    freepBox(output);
     output = new pBox;
     AveragePooling(input, output);
     cout << "AveragePooling Finally" << endl;
+    freepBox(input);
     input = output;
-//    output = new pBox;
-//    Flatten(input, output);
-//    cout << "Flatten Finally" << endl;
-//    input = output;
     output = new pBox;
     fully_connect(input, output, "../model_" + to_string(Num) + "/Bottleneck_list.txt");
     cout << "Fully_Connect Finally" << endl;
+    freepBox(input);
 
     /**
      * L2归一化
