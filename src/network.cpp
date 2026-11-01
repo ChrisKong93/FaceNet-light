@@ -1,6 +1,20 @@
 #include "network.h"
 
 /**
+ * 分配 count 个 mydataFmt 并清零;失败直接退出。
+ * count<=0 时按 1 分配,规避 malloc(0) 可能返回 NULL 的歧义
+ */
+static mydataFmt *safeCalloc(long count) {
+    if (count <= 0) count = 1;
+    mydataFmt *p = (mydataFmt *) calloc((size_t) count, sizeof(mydataFmt));
+    if (p == NULL) {
+        cerr << "allocate " << count << " floats failed!!" << endl;
+        exit(EXIT_FAILURE);
+    }
+    return p;
+}
+
+/**
  * 卷积以后偏移
  * @param pbox　feature map
  * @param pbias　偏移量
@@ -41,9 +55,7 @@ void image2MatrixInit(Mat &image, struct pBox *pbox) {
     pbox->height = image.rows;
     pbox->width = image.cols;
 
-    pbox->pdata = (mydataFmt *) malloc(pbox->channel * pbox->height * pbox->width * sizeof(mydataFmt));
-    if (pbox->pdata == NULL)cout << "the image2MatrixInit failed!!" << endl;
-    memset(pbox->pdata, 0, pbox->channel * pbox->height * pbox->width * sizeof(mydataFmt));
+    pbox->pdata = safeCalloc(pbox->channel * pbox->height * pbox->width);
 }
 
 /**
@@ -139,10 +151,7 @@ void featurePadInit(const pBox *pbox, pBox *outpBox, const int pad, const int pa
         outpBox->height = pbox->height + 2 * pad;
         outpBox->width = pbox->width + 2 * pad;
     }
-    long RowByteNum = outpBox->width * sizeof(mydataFmt);
-    outpBox->pdata = (mydataFmt *) malloc(outpBox->channel * outpBox->height * RowByteNum);
-    if (outpBox->pdata == NULL)cout << "the featurePadInit is failed!!" << endl;
-    memset(outpBox->pdata, 0, outpBox->channel * outpBox->height * RowByteNum);
+    outpBox->pdata = safeCalloc(outpBox->channel * outpBox->height * outpBox->width);
 }
 
 /**
@@ -200,15 +209,15 @@ void convolutionInit(const Weight *weight, pBox *pbox, pBox *outpBox) {
         outpBox->height = ((pbox->height - weight->kernelSize + 2 * weight->pad) / weight->stride) + 1;
     }
 //    cout << outpBox->pdata << endl;
-    outpBox->pdata = (mydataFmt *) malloc(outpBox->width * outpBox->height * outpBox->channel * sizeof(mydataFmt));
-//    cout << outpBox->pdata << endl;
-    if (outpBox->pdata == NULL)cout << "the convolutionInit is failed!!" << endl;
-    memset(outpBox->pdata, 0, outpBox->width * outpBox->height * outpBox->channel * sizeof(mydataFmt));
+    outpBox->pdata = safeCalloc(outpBox->width * outpBox->height * outpBox->channel);
     if (weight->pad != 0) {
         pBox *padpbox = new pBox;
         featurePadInit(pbox, padpbox, weight->pad, weight->padw, weight->padh);
         featurePad(pbox, padpbox, weight->pad, weight->padw, weight->padh);
+        //输入被 padded 缓冲整体替换,原缓冲先释放,否则每层带 pad 的卷积泄漏一次
+        free(pbox->pdata);
         *pbox = *padpbox;
+        delete padpbox;
     }
 }
 
@@ -282,9 +291,7 @@ void maxPoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride, 
         Matrix->height = ceil((float) (pbox->height - kernelSize) / stride + 1);
     }
     Matrix->channel = pbox->channel;
-    Matrix->pdata = (mydataFmt *) malloc(Matrix->channel * Matrix->width * Matrix->height * sizeof(mydataFmt));
-    if (Matrix->pdata == NULL)cout << "the maxPoolingI nit is failed!!" << endl;
-    memset(Matrix->pdata, 0, Matrix->channel * Matrix->width * Matrix->height * sizeof(mydataFmt));
+    Matrix->pdata = safeCalloc(Matrix->channel * Matrix->width * Matrix->height);
 }
 
 /**
@@ -357,9 +364,7 @@ void avePoolingInit(const pBox *pbox, pBox *Matrix, int kernelSize, int stride) 
     Matrix->width = ceil((float) (pbox->width - kernelSize) / stride + 1);
     Matrix->height = ceil((float) (pbox->height - kernelSize) / stride + 1);
     Matrix->channel = pbox->channel;
-    Matrix->pdata = (mydataFmt *) malloc(Matrix->channel * Matrix->width * Matrix->height * sizeof(mydataFmt));
-    if (Matrix->pdata == NULL)cout << "the maxPoolingInit is failed!!" << endl;
-    memset(Matrix->pdata, 0, Matrix->channel * Matrix->width * Matrix->height * sizeof(mydataFmt));
+    Matrix->pdata = safeCalloc(Matrix->channel * Matrix->width * Matrix->height);
 }
 
 /**
@@ -437,9 +442,7 @@ void fullconnectInit(const Weight *weight, pBox *outpBox) {
     outpBox->channel = weight->selfChannel;
     outpBox->width = 1;
     outpBox->height = 1;
-    outpBox->pdata = (mydataFmt *) malloc(weight->selfChannel * sizeof(mydataFmt));
-    if (outpBox->pdata == NULL)cout << "the fullconnectInit is failed!!" << endl;
-    memset(outpBox->pdata, 0, weight->selfChannel * sizeof(mydataFmt));
+    outpBox->pdata = safeCalloc(weight->selfChannel);
 }
 
 /**
@@ -530,12 +533,14 @@ void readData(string filename, long dataNumber[], mydataFmt *pTeam[], int length
                 i++;
             }
             catch (exception &e) {
-                cout << " error " << i << endl;
-                return;
+                cerr << "readData parse error at line " << i << " of " << filename << endl;
+                exit(EXIT_FAILURE);
             }
         }
     } else {
-        cout << "no such file" << filename << endl;
+        //权重灌不进去时所有参数保持全零,继续跑只会静默输出垃圾,必须中止
+        cerr << "readData: cannot open " << filename << endl;
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -565,18 +570,14 @@ long ConvAndFcInit(struct Weight *weight, int schannel, int lchannel, int kersiz
     weight->padw = padw;
     weight->stride = stride;
     weight->pad = pad;
-    weight->pbias = (mydataFmt *) malloc(schannel * sizeof(mydataFmt));
-    if (weight->pbias == NULL)cout << "Memory request not successful!!!";
-    memset(weight->pbias, 0, schannel * sizeof(mydataFmt));
+    weight->pbias = safeCalloc(schannel);
     long byteLenght;
     if (kersize == 0) {
         byteLenght = weight->selfChannel * weight->lastChannel * weight->h * weight->w;
     } else {
         byteLenght = weight->selfChannel * weight->lastChannel * weight->kernelSize * weight->kernelSize;
     }
-    weight->pdata = (mydataFmt *) malloc(byteLenght * sizeof(mydataFmt));
-    if (weight->pdata == NULL)cout << "Memory request not successful!!!";
-    memset(weight->pdata, 0, byteLenght * sizeof(mydataFmt));
+    weight->pdata = safeCalloc(byteLenght);
     return byteLenght;
 }
 
@@ -604,9 +605,7 @@ void conv_mergeInit(pBox *output, pBox *c1, pBox *c2, pBox *c3, pBox *c4) {
             }
         }
     }
-    output->pdata = (mydataFmt *) malloc(output->width * output->height * output->channel * sizeof(mydataFmt));
-    if (output->pdata == NULL)cout << "the conv_mergeInit is failed!!" << endl;
-    memset(output->pdata, 0, output->width * output->height * output->channel * sizeof(mydataFmt));
+    output->pdata = safeCalloc(output->width * output->height * output->channel);
 }
 
 /**
@@ -659,9 +658,7 @@ void mulandaddInit(const pBox *inpbox, const pBox *temppbox, pBox *outpBox) {
     outpBox->channel = temppbox->channel;
     outpBox->width = temppbox->width;
     outpBox->height = temppbox->height;
-    outpBox->pdata = (mydataFmt *) malloc(outpBox->width * outpBox->height * outpBox->channel * sizeof(mydataFmt));
-    if (outpBox->pdata == NULL)cout << "the mulandaddInit is failed!!" << endl;
-    memset(outpBox->pdata, 0, outpBox->width * outpBox->height * outpBox->channel * sizeof(mydataFmt));
+    outpBox->pdata = safeCalloc(outpBox->width * outpBox->height * outpBox->channel);
 }
 
 /**
@@ -691,19 +688,13 @@ void mulandadd(const pBox *inpbox, const pBox *temppbox, pBox *outpBox, float sc
  */
 void BatchNormInit(struct BN *beta, struct BN *mean, struct BN *var, int width) {
     var->width = width;
-    var->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
-    if (var->pdata == NULL)cout << "prelu apply for memory failed!!!!";
-    memset(var->pdata, 0, width * sizeof(mydataFmt));
+    var->pdata = safeCalloc(width);
 
     mean->width = width;
-    mean->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
-    if (mean->pdata == NULL)cout << "prelu apply for memory failed!!!!";
-    memset(mean->pdata, 0, width * sizeof(mydataFmt));
+    mean->pdata = safeCalloc(width);
 
     beta->width = width;
-    beta->pdata = (mydataFmt *) malloc(width * sizeof(mydataFmt));
-    if (beta->pdata == NULL)cout << "prelu apply for memory failed!!!!";
-    memset(beta->pdata, 0, width * sizeof(mydataFmt));
+    beta->pdata = safeCalloc(width);
 }
 
 /**
